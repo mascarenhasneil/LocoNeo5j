@@ -91,4 +91,4 @@ The full story is in [`docs/blog.md`](docs/blog.md). The short version:
 
 ## License
 
-MIT. See [`LICENSE`](LICENSE) (create one before publishing).
+MIT. See [`LICENSE`](LICENSE)
