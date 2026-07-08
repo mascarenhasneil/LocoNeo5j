@@ -1,0 +1,62 @@
+# docker-compose.yml — LocoNeo5j
+#
+# Brings up a single Neo4j Community Edition container with:
+#   * bind‑mounts for data, logs, plugins, config and import folders
+#   * the password read from a .env file
+#   * APOC, GDS and GenAI plugins loaded via NEO4J_PLUGINS
+#   * a custom neo4j.conf mounted read‑only from ./neo4j.conf
+#
+# Run:
+#   docker compose up -d          # start in the background
+#   docker compose logs -f        # follow the startup
+#   docker compose down           # stop (data, logs, plugins persist)
+
+services:
+  neo4j:
+    image: neo4j:trixie
+    container_name: neo4j
+    ports:
+      - "7474:7474"   # HTTP / Browser UI
+      - "7687:7687"   # Bolt (for drivers, neo4j-browser, etc.)
+
+    environment:
+      # ---- Password (loaded from .env) -----------------------------------
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+
+      # ---- License acceptance (required for the official image) ----------
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+
+      # ---- Plugins (variable renamed in Neo4j 5.x) -----------------------
+      - NEO4J_PLUGINS=["graph-data-science","genai","apoc"]
+
+      # ---- Tell the image where to find our custom config ----------------
+      - NEO4J_CONF=/conf
+
+    volumes:
+      # Persistent state — bind‑mounts live under ~/neo4j on the host.
+      # Pre‑chown these to UID 1001:1001 (the neo4j user inside the image)
+      # so the entry‑point script can chown them without warnings.
+      - $HOME/neo4j/data:/data
+      - $HOME/neo4j/logs:/logs
+      - $HOME/neo4j/plugins:/plugins
+
+      # Custom config (read‑only). The NEO4J_CONF env var points here.
+      - $HOME/neo4j/conf:/conf:ro
+
+      # Read‑only folder for one‑off imports of *.dump / CSV files.
+      - $HOME/neo4j/import:/import:ro
+
+    # Uncomment to attach a TTY for interactive debugging inside the container
+    # tty: true
+    # stdin_open: true
+    # command: sh
+
+    restart: unless-stopped
+
+# If you prefer Docker‑managed named volumes instead of bind‑mounts,
+# uncomment the block below and replace the bind‑mount lines above.
+#
+# volumes:
+#   neo4j_data:
+#   neo4j_logs:
+#   neo4j_plugins:
